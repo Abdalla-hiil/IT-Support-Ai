@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IT Support AI Dashboard</title>
+    <style>
+        :root { 
+            --main-dark: #1e293b; 
+            --accent-blue: #3b82f6; 
+            --bg-light: #f8fafc; 
+            --high-prio: #ef4444; 
+            --med-prio: #f59e0b;
+            --low-prio: #22c55e;
+            --offline: #64748b;
+        }
+
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: var(--bg-light); 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            margin: 0; 
+        }
+
+        .container { 
+            background: white; 
+            width: 450px; 
+            border-radius: 20px; 
+            box-shadow: 0 20px 50px rgba(0,0,0,0.1); 
+            overflow: hidden; 
+            border: 1px solid #e2e8f0; 
+        }
+        
+        /* Dashboard Status Header */
+        .status-header { 
+            display: flex; 
+            justify-content: space-between; 
+            background: #f1f5f9; 
+            padding: 12px 20px; 
+            font-size: 11px; 
+            letter-spacing: 1px;
+            font-weight: bold; 
+            color: #64748b; 
+        }
+
+        .online-indicator { 
+            height: 9px; 
+            width: 9px; 
+            background: #22c55e; 
+            border-radius: 50%; 
+            display: inline-block; 
+            margin-right: 5px; 
+            box-shadow: 0 0 5px #22c55e;
+        }
+        
+        .header { background: var(--main-dark); color: white; padding: 40px 20px; text-align: center; }
+        .content { padding: 30px; }
+
+        textarea { 
+            width: 100%; 
+            height: 120px; 
+            padding: 15px; 
+            border: 2px solid #e2e8f0; 
+            border-radius: 12px; 
+            box-sizing: border-box; 
+            font-size: 15px; 
+            transition: 0.3s;
+            resize: none;
+        }
+
+        textarea:focus { border-color: var(--accent-blue); outline: none; }
+
+        button { 
+            width: 100%; 
+            background: var(--main-dark); 
+            color: white; 
+            border: none; 
+            padding: 18px; 
+            border-radius: 12px; 
+            font-size: 16px; 
+            font-weight: bold; 
+            cursor: pointer; 
+            margin-top: 20px; 
+            transition: 0.2s;
+        }
+
+        button:hover { opacity: 0.9; transform: translateY(-2px); }
+        button:disabled { background: #94a3b8; cursor: not-allowed; }
+
+        .result-box { 
+            margin-top: 25px; 
+            display: none; /* Hidden by default */
+            text-align: center; 
+            padding: 20px; 
+            border-radius: 15px; 
+            background: #fff; 
+            border: 2px solid #f1f5f9; 
+        }
+
+        .badge { 
+            display: inline-block; 
+            padding: 6px 18px; 
+            border-radius: 50px; 
+            color: white; 
+            font-weight: bold; 
+            font-size: 12px; 
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="status-header">
+            <span><span id="dot" class="online-indicator"></span> SERVER: <span id="serverStatus">ACTIVE</span></span>
+            <span>📡 API: <span id="apiStatus">READY</span></span>
+        </div>
+
+        <div class="header">
+            <h1 style="margin:0; font-size:24px;">IT SUPPORT AI</h1>
+            <p style="margin:5px 0 0; opacity:0.6; font-size:12px;">Machine Learning Ticket System</p>
+        </div>
+
+        <div class="content">
+            <label style="font-size: 13px; font-weight: bold; color: #475569; display: block; margin-bottom: 8px;">Describe the Issue:</label>
+            <textarea id="issueInput" maxlength="500" placeholder="Describe the technical problem here..."></textarea>
+            
+            <button id="submitBtn" onclick="processTicket()">SUBMIT TICKET</button>
+
+            <div id="resultArea" class="result-box">
+                <div id="prioBadge" class="badge">---</div>
+                <p id="msg" style="margin: 0; font-size: 14px; line-height: 1.5; color: #1e293b;"></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    
+async function processTicket() {
+    const textInput = document.getElementById('issueInput');
+    const text = textInput.value.trim();
+    const resultArea = document.getElementById('resultArea');
+    const badge = document.getElementById('prioBadge');
+    const msg = document.getElementById('msg');
+    const btn = document.getElementById('submitBtn');
+    
+    if (!text) return alert("Please enter a description!");
+
+    // --- 1. RESET UI IMMEDIATELY ON CLICK ---
+    resultArea.style.display = "none"; 
+    badge.innerText = "";             
+    msg.innerText = "";               
+
+    // Set Loading State
+    btn.disabled = true;
+    btn.innerText = "AI is Analyzing...";
+
+    try {
+        const response = await fetch('http://127.0.0.1:5000/predict', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ "text": text })
+        });
+
+        if (!response.ok) throw new Error("API Offline");
+
+        const data = await response.json();
+
+        // --- 2. SHOW AI RESULTS ---
+        resultArea.style.display = "block"; 
+        badge.innerText = data.priority + " Priority";
+        
+        // Set colors
+        if(data.priority === "High") badge.style.backgroundColor = "var(--high-prio)";
+        else if(data.priority === "Medium") badge.style.backgroundColor = "var(--med-prio)";
+        else badge.style.backgroundColor = "var(--low-prio)";
+
+        // ADDED: Success Message text
+        msg.innerHTML = "<b>✅ Successfully!</b><br>We received your message and will assist you as soon as possible Thank you.";
+        
+        // --- 3. CLEAR THE TEXT BOX ---
+        textInput.value = ""; 
+
+        // --- 4. AUTO-HIDE AFTER 5 SECONDS (5000ms) ---
+        setTimeout(() => {
+            resultArea.style.display = "none";
+            badge.innerText = "";
+            msg.innerText = "";
+        }, 5000); 
+
+    } catch (error) {
+        // Handle API Failure
+        resultArea.style.display = "block";
+        msg.style.color = "var(--high-prio)";
+        msg.innerHTML = "<b>🚨 API OFFLINE</b><br>Please start the server.";
+        badge.innerText = "OFFLINE";
+        badge.style.backgroundColor = "var(--offline)";
+
+        // Error message stays visible for 10 seconds
+        setTimeout(() => {
+            resultArea.style.display = "none";
+        }, 5000);
+    } finally {
+        btn.disabled = false;
+        btn.innerText = "SUBMIT TICKET";
+    }
+}
+    </script>
+</body>
+</html>
