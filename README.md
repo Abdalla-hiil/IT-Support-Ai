@@ -22,7 +22,6 @@ To make the AI smart, I performed these steps in Python:
 * **De-duplication:** I used `drop_duplicates(keep='first')` to remove repeat tickets so the AI doesn't get "lazy."
 * **Normalization:** Converted all text to lowercase and removed extra spaces.
 * **Vectorization (TF-IDF):** Computers cannot read English. I used **TF-IDF** to turn words into numbers. I used `ngram_range=(1,2)` so the AI can understand two words together, like "System Crash."
-* **Class Balancing:** Because I had many "High" tickets but fewer "Low" tickets, I used `class_weight='balanced'` to make sure the AI treats every category as equally important.
 
 ---
 
